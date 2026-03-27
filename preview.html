@@ -1,0 +1,1832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LRN Policy Management</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #F5F7FA;
+    color: #1e293b;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .app-shell { display: flex; height: 100vh; overflow: hidden; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 260px;
+    background: #003366;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    flex-shrink: 0;
+  }
+  .sidebar-logo {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .sidebar-logo-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .sidebar-logo-sub {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 2px;
+  }
+  .sidebar-nav {
+    flex: 1;
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .nav-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: #64748b;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 8px 8px 4px;
+  }
+  .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #e2e8f0;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.15s;
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+  }
+  .nav-link:hover { background: #004488; }
+  .nav-link.active { background: #F5A623; color: #fff; font-weight: 600; }
+  .nav-link .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+  .sidebar-bottom {
+    padding: 16px 12px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+  }
+
+  /* ── Content area ── */
+  .content-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+  }
+  .top-header {
+    background: #fff;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0 24px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .top-header-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1e293b;
+  }
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .user-name { font-size: 14px; font-weight: 500; color: #475569; }
+  .avatar {
+    width: 36px;
+    height: 36px;
+    background: #F5A623;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .page-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    padding: 20px;
+  }
+
+  /* ── Buttons ── */
+  .btn-primary {
+    background: #F5A623;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    font-family: inherit;
+    transition: background 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-primary:hover { background: #D4891E; }
+  .btn-primary:active { background: #b87418; }
+
+  .btn-secondary {
+    background: #003366;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    font-family: inherit;
+    transition: background 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-secondary:hover { background: #004488; }
+
+  .btn-outline {
+    background: transparent;
+    border: 2px solid #003366;
+    color: #003366;
+    border-radius: 8px;
+    padding: 9px 20px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    font-family: inherit;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-outline:hover { background: #003366; color: #fff; }
+
+  .btn-sm {
+    padding: 6px 14px;
+    font-size: 13px;
+    border-radius: 6px;
+  }
+  .btn-green {
+    background: #059669;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    font-family: inherit;
+    transition: background 0.15s;
+  }
+  .btn-green:hover { background: #047857; }
+
+  .btn-red {
+    background: transparent;
+    border: 2px solid #dc2626;
+    color: #dc2626;
+    border-radius: 8px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .btn-red:hover { background: #dc2626; color: #fff; }
+
+  .btn-amber {
+    background: #d97706;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    font-family: inherit;
+    transition: background 0.15s;
+  }
+  .btn-amber:hover { background: #b45309; }
+
+  /* ── Spinner ── */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #e2e8f0;
+    border-top-color: #F5A623;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  .spinner-lg {
+    width: 60px;
+    height: 60px;
+    border-width: 5px;
+  }
+
+  /* ── Badge pills ── */
+  .badge {
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+  }
+  .badge-purple { background: #ede9fe; color: #7c3aed; }
+  .badge-amber  { background: #fef3c7; color: #b45309; }
+  .badge-green  { background: #d1fae5; color: #065f46; }
+  .badge-blue   { background: #dbeafe; color: #1e40af; }
+  .badge-red    { background: #fee2e2; color: #dc2626; }
+  .badge-gold   { background: #fef3c7; color: #92400e; }
+  .badge-gray   { background: #f3f4f6; color: #6b7280; }
+  .badge-navy   { background: #003366; color: #fff; }
+
+  /* ── Stepper ── */
+  .stepper {
+    display: flex;
+    align-items: center;
+    padding: 20px 0 28px;
+  }
+  .step-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+    flex: 1;
+  }
+  .step-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    z-index: 1;
+    position: relative;
+  }
+  .step-circle.done     { background: #fbbf24; color: #fff; }
+  .step-circle.active   { background: #F5A623; color: #fff; box-shadow: 0 0 0 4px rgba(245,166,35,0.25); }
+  .step-circle.upcoming { background: #e2e8f0; color: #94a3b8; }
+  .step-label {
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+    color: #64748b;
+  }
+  .step-label.active { color: #F5A623; font-weight: 600; }
+  .step-label.done   { color: #fbbf24; }
+  .step-connector {
+    height: 2px;
+    flex: 1;
+    background: #e2e8f0;
+    margin-bottom: 18px;
+  }
+  .step-connector.done { background: #fbbf24; }
+
+  /* ── Dashboard stats grid ── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    padding: 20px;
+  }
+  .stat-card-icon { font-size: 24px; margin-bottom: 8px; }
+  .stat-card-value { font-size: 28px; font-weight: 700; color: #1e293b; }
+  .stat-card-label { font-size: 13px; color: #64748b; margin-top: 2px; }
+
+  /* ── Policy cards ── */
+  .policy-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .policy-card {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    padding: 20px;
+  }
+  .policy-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+  .policy-card-title { font-size: 15px; font-weight: 600; color: #1e293b; margin-bottom: 4px; }
+  .policy-card-meta { font-size: 12px; color: #64748b; }
+  .policy-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  /* ── Activity list ── */
+  .activity-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .activity-item:last-child { border-bottom: none; }
+  .activity-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    background: #f1f5f9;
+  }
+  .activity-text { font-size: 13px; color: #1e293b; }
+  .activity-meta { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+
+  /* ── Upload ── */
+  .upload-zone {
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 48px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    background: #f8fafc;
+  }
+  .upload-zone:hover { border-color: #F5A623; background: #fffbf0; }
+  .upload-zone.file-selected { border-color: #059669; background: #f0fdf4; }
+  .upload-zone-icon { font-size: 48px; margin-bottom: 12px; }
+  .upload-zone-text { font-size: 15px; color: #475569; margin-bottom: 6px; }
+  .upload-zone-sub { font-size: 13px; color: #94a3b8; margin-bottom: 16px; }
+
+  .form-group { margin-bottom: 16px; }
+  .form-label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+  .form-input, .form-select {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    color: #1e293b;
+    background: #fff;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    outline: none;
+  }
+  .form-input:focus, .form-select:focus {
+    border-color: #F5A623;
+    box-shadow: 0 0 0 3px rgba(245,166,35,0.15);
+  }
+  .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  /* ── AI Review ── */
+  .ai-summary-bar {
+    background: #003366;
+    color: #fff;
+    border-radius: 10px;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .ai-summary-bar-left { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 500; }
+  .ai-summary-bar-right { display: flex; align-items: center; gap: 12px; }
+  .ai-count-chip {
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .two-col { display: flex; gap: 20px; height: calc(100vh - 230px); }
+  .two-col-left { flex: 1; overflow-y: auto; }
+  .two-col-right { flex: 1; overflow-y: auto; }
+
+  .panel-header {
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e2e8f0;
+  }
+
+  .policy-doc {
+    font-size: 13px;
+    line-height: 1.7;
+    color: #374151;
+    font-family: 'Courier New', monospace;
+    white-space: pre-wrap;
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+  }
+
+  .suggestion-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    transition: opacity 0.2s;
+  }
+  .suggestion-card.dismissed { opacity: 0.45; filter: grayscale(0.6); }
+  .suggestion-card-header { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+  .suggestion-title { font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 4px; }
+  .suggestion-section { font-size: 12px; color: #94a3b8; font-style: italic; margin-bottom: 10px; }
+
+  .diff-before {
+    background: #fff5f5;
+    border-left: 3px solid #fca5a5;
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    font-size: 12.5px;
+    color: #7f1d1d;
+    font-style: italic;
+  }
+  .diff-after {
+    background: #f0fdf4;
+    border-left: 3px solid #86efac;
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    font-size: 12.5px;
+    color: #14532d;
+  }
+  .diff-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; opacity: 0.7; }
+  .source-cite { font-size: 11px; color: #94a3b8; font-style: italic; margin-bottom: 12px; }
+
+  .accepted-banner {
+    background: #d1fae5;
+    color: #065f46;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    margin-top: 4px;
+  }
+
+  /* ── Track Changes ── */
+  .track-layout { display: flex; gap: 20px; height: calc(100vh - 200px); }
+  .diff-panel {
+    flex: 1;
+    border-radius: 10px;
+    padding: 20px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 12.5px;
+    line-height: 1.7;
+    border: 1px solid #e2e8f0;
+  }
+  .diff-panel-before { background: #fff5f5; }
+  .diff-panel-after  { background: #f0fff4; }
+  .diff-panel-header {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid rgba(0,0,0,0.08);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .dot-red { background: #ef4444; }
+  .dot-green { background: #22c55e; }
+  .diff-line { display: block; padding: 1px 0; white-space: pre-wrap; word-break: break-word; }
+  .diff-line-added { background: #bbf7d0; color: #14532d; border-radius: 3px; padding: 0 4px; }
+  .diff-line-prefix { font-weight: 700; }
+
+  .track-sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .version-item {
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .version-item.current { border-color: #F5A623; border-width: 2px; }
+  .version-tag { font-size: 13px; font-weight: 700; color: #1e293b; }
+  .version-date { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+
+  .change-summary-box {
+    background: #003366;
+    color: #fff;
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .change-summary-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; opacity: 0.7; }
+  .change-summary-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .change-summary-row:last-child { border-bottom: none; }
+  .change-summary-val { font-weight: 700; }
+
+  /* ── Stakeholders ── */
+  .stakeholder-layout { display: flex; gap: 20px; height: calc(100vh - 240px); }
+  .stakeholder-main { flex: 1; overflow-y: auto; }
+  .stakeholder-panel { width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 0; }
+
+  .reviewer-card {
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .reviewer-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .reviewer-info { display: flex; align-items: center; gap: 10px; }
+  .reviewer-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #003366;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .reviewer-name { font-size: 14px; font-weight: 600; color: #1e293b; }
+  .reviewer-role { font-size: 12px; color: #94a3b8; }
+  .reviewer-comment {
+    font-size: 13px;
+    color: #475569;
+    background: #f8fafc;
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+  .reviewer-date { font-size: 11px; color: #94a3b8; margin-top: 6px; }
+
+  .progress-bar-wrap {
+    background: #e2e8f0;
+    border-radius: 4px;
+    height: 8px;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: #F5A623;
+    border-radius: 4px;
+    transition: width 0.4s ease;
+  }
+
+  /* ── Chat ── */
+  .chat-container {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+  }
+  .chat-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    flex-shrink: 0;
+  }
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .chat-bubble-wrap { display: flex; flex-direction: column; }
+  .chat-bubble-wrap.right { align-items: flex-end; }
+  .chat-author { font-size: 11px; color: #94a3b8; margin-bottom: 3px; font-weight: 500; }
+  .chat-bubble {
+    max-width: 85%;
+    padding: 10px 14px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .chat-bubble.left {
+    background: #003366;
+    color: #fff;
+    border-radius: 0 12px 12px 12px;
+  }
+  .chat-bubble.right {
+    background: #f3f4f6;
+    color: #1e293b;
+    border-radius: 12px 0 12px 12px;
+  }
+  .chat-date { font-size: 10px; color: #94a3b8; margin-top: 3px; }
+  .chat-input-row {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    border-top: 1px solid #e2e8f0;
+    flex-shrink: 0;
+  }
+  .chat-input {
+    flex: 1;
+    padding: 9px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .chat-input:focus { border-color: #F5A623; }
+
+  /* ── Publish ── */
+  .publish-layout { display: flex; gap: 24px; }
+  .publish-left { flex: 1; }
+  .publish-right { flex: 1; }
+
+  .summary-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .summary-table tr { border-bottom: 1px solid #f1f5f9; }
+  .summary-table tr:last-child { border-bottom: none; }
+  .summary-table td { padding: 10px 0; vertical-align: top; }
+  .summary-table td:first-child { color: #64748b; font-weight: 500; width: 45%; }
+  .summary-table td:last-child { color: #1e293b; font-weight: 600; }
+
+  .checklist-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    font-size: 13px;
+    color: #374151;
+  }
+  .checklist-icon { font-size: 16px; }
+
+  .checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    font-size: 13px;
+    color: #374151;
+    cursor: pointer;
+  }
+  .checkbox-item input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #F5A623;
+    cursor: pointer;
+  }
+
+  .email-preview {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  }
+  .email-header-bar {
+    background: #003366;
+    color: #fff;
+    padding: 16px 20px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .email-subheader {
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 10px 20px;
+    font-size: 12px;
+    color: #64748b;
+  }
+  .email-body { padding: 20px; background: #fff; }
+  .email-body p { font-size: 13px; line-height: 1.7; color: #374151; margin-bottom: 12px; }
+  .email-key-change { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: #374151; margin-bottom: 6px; }
+  .email-actions { padding: 16px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; gap: 10px; }
+
+  .publish-success-stats { display: flex; gap: 16px; margin-top: 28px; }
+  .success-stat-card {
+    flex: 1;
+    border-radius: 10px;
+    padding: 18px;
+    text-align: center;
+  }
+  .success-stat-card.green-bg { background: #d1fae5; }
+  .success-stat-card.blue-bg  { background: #dbeafe; }
+  .success-stat-card.purple-bg { background: #ede9fe; }
+  .success-stat-value { font-size: 20px; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
+  .success-stat-label { font-size: 13px; font-weight: 600; color: #374151; }
+  .success-stat-sub   { font-size: 11px; color: #6b7280; margin-top: 2px; }
+
+  /* ── Misc ── */
+  .page-heading-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .page-heading { font-size: 22px; font-weight: 700; color: #1e293b; }
+  .page-subheading { font-size: 13px; color: #64748b; margin-top: 2px; }
+  .section-heading { font-size: 16px; font-weight: 600; color: #1e293b; margin-bottom: 14px; }
+
+  .centered-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 80px 0;
+  }
+  .centered-loading p { font-size: 15px; color: #64748b; font-weight: 500; }
+
+  .invite-row { display: flex; gap: 8px; margin-top: 12px; }
+  .invite-input {
+    flex: 1;
+    padding: 9px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+  }
+
+  .all-approved-banner {
+    background: #d1fae5;
+    color: #065f46;
+    border-radius: 10px;
+    padding: 14px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
+  .section-card {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .info-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #64748b;
+    padding: 6px 0;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .info-row:last-child { border-bottom: none; }
+  .info-row strong { color: #1e293b; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+// ── Global State ──────────────────────────────────────────────
+window.state = {
+  page: 'dashboard',
+  uploadStep: 0,
+  fileSelected: false,
+  formFilled: false,
+  suggestions: { s1: null, s2: null, s3: null, s4: null, s5: null },
+  reviewers: { lisa: 'pending' },
+  chatMessages: [
+    { author: 'Amanda Torres', side: 'left',  text: 'GDPR additions look solid. Did we get DPO sign-off?',              date: 'Mar 13' },
+    { author: 'Sarah Johnson', side: 'right', text: 'Yes — DPO confirmed on Mar 12.',                                    date: 'Mar 13' },
+    { author: 'James Wright',  side: 'left',  text: 'SOX 302 language matches our cert template. Good to go.',           date: 'Mar 14' },
+  ],
+  publishStep: 0,
+};
+
+window.navigate = function(page) {
+  window.state.page = page;
+  render();
+};
+
+// ── Helpers ───────────────────────────────────────────────────
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+function stepperHTML(activeStep) {
+  const steps = ['Upload', 'AI Review', 'Track Changes', 'Stakeholder Review', 'Publish'];
+  let html = '<div class="stepper">';
+  steps.forEach(function(label, i) {
+    const n = i + 1;
+    const isDone   = n < activeStep;
+    const isActive = n === activeStep;
+    const circleClass = isDone ? 'done' : (isActive ? 'active' : 'upcoming');
+    const labelClass  = isDone ? 'done' : (isActive ? 'active' : '');
+    const icon = isDone ? '✓' : n;
+    html += '<div class="step-item">';
+    html += '<div class="step-circle ' + circleClass + '">' + icon + '</div>';
+    html += '<div class="step-label ' + labelClass + '">' + label + '</div>';
+    html += '</div>';
+    if (i < steps.length - 1) {
+      html += '<div class="step-connector' + (isDone ? ' done' : '') + '"></div>';
+    }
+  });
+  html += '</div>';
+  return html;
+}
+
+function sidebarHTML() {
+  var p = window.state.page;
+  function navLink(page, icon, label) {
+    var active = (p === page) || (page === 'upload' && (p === 'ai-review' || p === 'track-changes' || p === 'stakeholders' || p === 'publish'));
+    var isActive = p === page;
+    return '<button class="nav-link' + (isActive ? ' active' : '') + '" onclick="navigate(\'' + page + '\')">' +
+      '<span class="nav-icon">' + icon + '</span>' + label + '</button>';
+  }
+  return '<div class="sidebar">' +
+    '<div class="sidebar-logo">' +
+      '<div class="sidebar-logo-title">🛡️ LRN</div>' +
+      '<div class="sidebar-logo-sub">Policy Management</div>' +
+    '</div>' +
+    '<nav class="sidebar-nav">' +
+      '<div class="nav-label">Main Menu</div>' +
+      navLink('dashboard', '🏠', 'Dashboard') +
+      navLink('upload', '📤', 'Upload Policy') +
+      navLink('my-policies', '📋', 'My Policies') +
+    '</nav>' +
+    '<div class="sidebar-bottom">' +
+      '<button class="nav-link" style="color:#94a3b8">' +
+        '<span class="nav-icon">⚙️</span> Settings' +
+      '</button>' +
+    '</div>' +
+  '</div>';
+}
+
+function headerHTML() {
+  return '<div class="top-header">' +
+    '<div class="top-header-title">Policy Management</div>' +
+    '<div class="user-info">' +
+      '<span class="user-name">Sarah Johnson</span>' +
+      '<div class="avatar">SJ</div>' +
+    '</div>' +
+  '</div>';
+}
+
+function shell(content) {
+  return '<div class="app-shell">' +
+    sidebarHTML() +
+    '<div class="content-area">' +
+      headerHTML() +
+      '<div class="page-content">' + content + '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+// ── Dashboard ─────────────────────────────────────────────────
+function dashboardPage() {
+  var content = '';
+
+  // Heading row
+  content += '<div class="page-heading-row">' +
+    '<div>' +
+      '<div class="page-heading">Dashboard</div>' +
+      '<div class="page-subheading">Welcome back, Sarah. Here\'s your policy overview.</div>' +
+    '</div>' +
+    '<button class="btn-primary" onclick="navigate(\'upload\')">+ Upload New Policy</button>' +
+  '</div>';
+
+  // Stats
+  var stats = [
+    { icon: '📚', value: '24', label: 'Total Policies' },
+    { icon: '✅', value: '18', label: 'Published' },
+    { icon: '🕐', value: '4',  label: 'In Review' },
+    { icon: '📈', value: '94%', label: 'Compliance Score' },
+  ];
+  content += '<div class="stats-grid">';
+  stats.forEach(function(s) {
+    content += '<div class="stat-card">' +
+      '<div class="stat-card-icon">' + s.icon + '</div>' +
+      '<div class="stat-card-value">' + s.value + '</div>' +
+      '<div class="stat-card-label">' + s.label + '</div>' +
+    '</div>';
+  });
+  content += '</div>';
+
+  // Recent Policies
+  content += '<div class="section-heading">Recent Policies</div>';
+  var policies = [
+    {
+      title: 'Code of Conduct',
+      dept: 'HR',
+      version: 'v2.1',
+      owner: 'Sarah Johnson',
+      badgeClass: 'badge-purple',
+      badgeText: 'AI Review',
+      btnText: 'Continue Workflow →',
+      page: 'ai-review',
+    },
+    {
+      title: 'Data Privacy Policy',
+      dept: 'Legal & Compliance',
+      version: 'v3.0',
+      owner: 'Michael Chen',
+      badgeClass: 'badge-amber',
+      badgeText: 'Stakeholder Review',
+      btnText: 'Continue Workflow →',
+      page: 'stakeholders',
+    },
+    {
+      title: 'Anti-Bribery & Corruption Policy',
+      dept: 'Legal',
+      version: 'v1.5',
+      owner: 'Amanda Torres',
+      badgeClass: 'badge-green',
+      badgeText: 'Published',
+      btnText: 'View Policy →',
+      page: 'publish',
+    },
+    {
+      title: 'Whistleblower Protection Policy',
+      dept: 'HR',
+      version: 'v1.0',
+      owner: 'David Kim',
+      badgeClass: 'badge-blue',
+      badgeText: 'Uploaded',
+      btnText: 'Continue Workflow →',
+      page: 'upload',
+    },
+  ];
+  content += '<div class="policy-grid">';
+  policies.forEach(function(pol) {
+    content += '<div class="policy-card">' +
+      '<div class="policy-card-header">' +
+        '<div>' +
+          '<div class="policy-card-title">' + pol.title + '</div>' +
+          '<div class="policy-card-meta">' + pol.dept + ' · ' + pol.version + '</div>' +
+        '</div>' +
+        '<span class="badge ' + pol.badgeClass + '">' + pol.badgeText + '</span>' +
+      '</div>' +
+      '<div class="info-row"><span>👤</span><span>Owner: <strong>' + pol.owner + '</strong></span></div>' +
+      '<div class="policy-card-footer">' +
+        '<span class="badge badge-gray">' + pol.version + '</span>' +
+        '<button class="btn-primary btn-sm" onclick="navigate(\'' + pol.page + '\')">' + pol.btnText + '</button>' +
+      '</div>' +
+    '</div>';
+  });
+  content += '</div>';
+
+  // Recent Activity
+  content += '<div class="section-card">' +
+    '<div class="section-heading" style="margin-bottom:4px">Recent Activity</div>';
+  var activities = [
+    { icon: '✅', color: '#d1fae5', text: 'Published — Anti-Bribery Policy',  meta: 'Amanda Torres • 2 hours ago' },
+    { icon: '🔵', color: '#dbeafe', text: 'Review completed — Data Privacy',   meta: 'Michael Chen • 4 hours ago' },
+    { icon: '⚡', color: '#fef3c7', text: 'AI Review — Code of Conduct',       meta: 'Sarah Johnson • 1 day ago' },
+    { icon: '📤', color: '#f3f4f6', text: 'Uploaded — Whistleblower Policy',   meta: 'David Kim • 2 days ago' },
+    { icon: '🔔', color: '#fce7f3', text: 'Reminder sent — Q1 Policy Review',  meta: 'System • 3 days ago' },
+  ];
+  activities.forEach(function(a) {
+    content += '<div class="activity-item">' +
+      '<div class="activity-icon" style="background:' + a.color + '">' + a.icon + '</div>' +
+      '<div>' +
+        '<div class="activity-text">' + a.text + '</div>' +
+        '<div class="activity-meta">' + a.meta + '</div>' +
+      '</div>' +
+    '</div>';
+  });
+  content += '</div>';
+
+  return shell(content);
+}
+
+// ── Upload ─────────────────────────────────────────────────────
+function uploadPage() {
+  var content = '';
+  content += '<div class="page-heading-row">' +
+    '<div>' +
+      '<div class="page-heading">Upload Policy</div>' +
+      '<div class="page-subheading">Upload a new or revised policy document for AI-powered review.</div>' +
+    '</div>' +
+  '</div>';
+  content += stepperHTML(1);
+
+  var s = window.state.uploadStep;
+
+  if (s === 1) {
+    content += '<div class="centered-loading">' +
+      '<div class="spinner spinner-lg"></div>' +
+      '<p>Uploading &amp; scanning policy...</p>' +
+      '<p style="font-size:12px;color:#94a3b8">Running virus scan and extracting document structure</p>' +
+    '</div>';
+    return shell(content);
+  }
+
+  if (s === 2) {
+    content += '<div class="centered-loading">' +
+      '<div style="font-size:72px">✅</div>' +
+      '<div style="font-size:24px;font-weight:700;color:#1e293b">Policy Uploaded Successfully!</div>' +
+      '<p style="color:#64748b;font-size:15px;max-width:400px;text-align:center">5 AI suggestions found based on regulations and LRN expertise.</p>' +
+      '<button class="btn-primary" style="font-size:15px;padding:13px 28px" onclick="navigate(\'ai-review\')">Review AI Suggestions →</button>' +
+    '</div>';
+    return shell(content);
+  }
+
+  // Step 0 — form
+  var fileSelected = window.state.fileSelected;
+  content += '<div class="section-card">' +
+    '<div class="section-heading">1. Select Document</div>' +
+    '<div class="upload-zone' + (fileSelected ? ' file-selected' : '') + '" id="upload-drop-zone">';
+  if (fileSelected) {
+    content += '<div class="upload-zone-icon">📄</div>' +
+      '<div style="font-size:15px;font-weight:600;color:#059669">Code of Conduct Draft.docx — 142 KB ✓</div>' +
+      '<div style="font-size:13px;color:#64748b;margin-top:6px">File ready for upload</div>';
+  } else {
+    content += '<div class="upload-zone-icon">📄</div>' +
+      '<div class="upload-zone-text">Drag &amp; drop your policy document here</div>' +
+      '<div class="upload-zone-sub">Supports PDF, DOCX, DOC, TXT files</div>' +
+      '<button class="btn-outline btn-sm" id="browse-files-btn">Browse Files</button>';
+  }
+  content += '</div></div>';
+
+  content += '<div class="section-card">' +
+    '<div class="section-heading">2. Policy Metadata</div>' +
+    '<div class="form-grid-2">' +
+      '<div class="form-group">' +
+        '<label class="form-label">Policy Title *</label>' +
+        '<input class="form-input" type="text" placeholder="e.g. Code of Conduct" value="Code of Conduct" />' +
+      '</div>' +
+      '<div class="form-group">' +
+        '<label class="form-label">Department *</label>' +
+        '<select class="form-select">' +
+          '<option value="HR" selected>HR</option>' +
+          '<option value="Legal">Legal</option>' +
+          '<option value="Finance">Finance</option>' +
+          '<option value="IT">IT</option>' +
+          '<option value="Operations">Operations</option>' +
+        '</select>' +
+      '</div>' +
+      '<div class="form-group">' +
+        '<label class="form-label">Policy Owner *</label>' +
+        '<input class="form-input" type="text" placeholder="Full name" value="Sarah Johnson" />' +
+      '</div>' +
+      '<div class="form-group">' +
+        '<label class="form-label">Category *</label>' +
+        '<select class="form-select">' +
+          '<option value="Code of Conduct" selected>Code of Conduct</option>' +
+          '<option value="Data Privacy">Data Privacy</option>' +
+          '<option value="Anti-Bribery">Anti-Bribery</option>' +
+          '<option value="Whistleblower">Whistleblower</option>' +
+          '<option value="Other">Other</option>' +
+        '</select>' +
+      '</div>' +
+      '<div class="form-group">' +
+        '<label class="form-label">Effective Date</label>' +
+        '<input class="form-input" type="date" value="2024-04-01" />' +
+      '</div>' +
+      '<div class="form-group">' +
+        '<label class="form-label">Version</label>' +
+        '<input class="form-input" type="text" placeholder="e.g. 2.1" value="2.1" />' +
+      '</div>' +
+    '</div>' +
+    '<div style="margin-top:8px">' +
+      '<button class="btn-primary" id="upload-btn" style="font-size:15px;padding:13px 28px">Upload Policy &amp; Start AI Review →</button>' +
+    '</div>' +
+  '</div>';
+
+  return shell(content);
+}
+
+// ── AI Review ─────────────────────────────────────────────────
+function aiReviewPage() {
+  var content = '';
+  content += '<div class="page-heading-row">' +
+    '<div>' +
+      '<div class="page-heading">AI Review</div>' +
+      '<div class="page-subheading">Review and apply AI-powered suggestions to strengthen your policy.</div>' +
+    '</div>' +
+  '</div>';
+  content += stepperHTML(2);
+
+  // Summary bar
+  content += '<div class="ai-summary-bar">' +
+    '<div class="ai-summary-bar-left">' +
+      '<span style="font-size:20px">⚡</span>' +
+      '<div>' +
+        '<div style="font-weight:700;font-size:15px">AI Analysis Complete</div>' +
+        '<div style="font-size:12px;opacity:0.8;margin-top:2px">Analyzed against 12 regulations and LRN\'s global compliance database</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="ai-summary-bar-right">' +
+      '<span class="ai-count-chip" style="background:#fee2e2;color:#dc2626">🔴 2 High</span>' +
+      '<span class="ai-count-chip" style="background:#fef3c7;color:#b45309">🟡 2 Medium</span>' +
+      '<span class="ai-count-chip" style="background:#dbeafe;color:#1e40af">🔵 1 Low</span>' +
+    '</div>' +
+  '</div>';
+
+  // Two-column layout
+  content += '<div class="two-col">';
+
+  // Left — policy doc
+  content += '<div class="two-col-left">';
+  content += '<div class="panel-header">📄 Policy Document</div>';
+  content += '<div class="policy-doc">' +
+'CODE OF CONDUCT — Version 2.1\n' +
+'━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
+'1.1 Purpose and Scope\n' +
+'This Code of Conduct establishes the ethical standards and behavioral\n' +
+'expectations for all LRN employees, contractors, and business partners\n' +
+'worldwide. Compliance is mandatory and violations may result in\n' +
+'disciplinary action up to and including termination.\n\n' +
+'2.1 Ethical Decision Making\n' +
+'Employees are expected to act with integrity in all business dealings.\n' +
+'When faced with ethical dilemmas, consult your manager or the Ethics Hotline.\n\n' +
+'3.1 Conflicts of Interest\n' +
+'All actual or potential conflicts of interest must be disclosed promptly\n' +
+'to your direct manager and the Compliance Officer.\n\n' +
+'4.2 Employee Data Collection\n' +
+'The Company collects and processes employee personal data for operational\n' +
+'purposes. This may include contact information, employment history,\n' +
+'performance records, and payroll data. Employees should be aware that\n' +
+'this data is used for legitimate business purposes.\n\n' +
+'5.1 Confidentiality\n' +
+'Employees must maintain the confidentiality of proprietary information\n' +
+'and trade secrets both during and after employment.\n\n' +
+'7.1 Financial Reporting\n' +
+'All financial records must accurately reflect the company\'s transactions.\n' +
+'Employees involved in financial reporting bear personal responsibility\n' +
+'for the accuracy of submitted certifications.\n\n' +
+'8.3 Third Party Relationships\n' +
+'Business relationships with third parties must be conducted with\n' +
+'transparency and in compliance with all applicable anti-corruption laws.' +
+  '</div>';
+  content += '</div>';
+
+  // Right — suggestions
+  content += '<div class="two-col-right">';
+  content += '<div class="panel-header">💡 AI Suggestions (5)</div>';
+
+  var suggestions = [
+    {
+      id: 's1',
+      regTag: 'GDPR', regClass: 'badge-blue',
+      sevText: 'HIGH', sevClass: 'badge-red',
+      title: 'GDPR Article 13 — Data Collection Transparency',
+      section: 'Section 4.2',
+      before: 'data is used for legitimate business purposes.',
+      after: 'In accordance with GDPR Article 13, employees are informed about the purposes and legal basis for processing, their rights under Articles 15–22, and data retention periods.',
+      source: 'EU GDPR Art. 13',
+    },
+    {
+      id: 's2',
+      regTag: 'SOX', regClass: 'badge-red',
+      sevText: 'HIGH', sevClass: 'badge-red',
+      title: 'SOX Section 302 — Corporate Accountability',
+      section: 'Section 7.1',
+      before: 'Employees involved in financial reporting bear personal responsibility for the accuracy of submitted certifications.',
+      after: 'In accordance with SOX Section 302, the CEO and CFO must certify the accuracy of all financial statements. Employees must report any known inaccuracies immediately to the Chief Compliance Officer.',
+      source: 'Sarbanes-Oxley Act §302',
+    },
+    {
+      id: 's3',
+      regTag: 'LRN', regClass: 'badge-gold',
+      sevText: 'MEDIUM', sevClass: 'badge-amber',
+      title: 'LRN Best Practice — Scenario-Based Guidance',
+      section: 'Section 2.1',
+      before: 'When faced with ethical dilemmas, consult your manager or the Ethics Hotline.',
+      after: 'When faced with ethical dilemmas, consult your manager or the Ethics Hotline. Refer to the LRN Scenario Library for real-world examples and guided decision frameworks.',
+      source: 'LRN Ethics Report 2023',
+    },
+    {
+      id: 's4',
+      regTag: 'FCPA', regClass: 'badge-purple',
+      sevText: 'LOW', sevClass: 'badge-blue',
+      title: 'FCPA — Third Party Alignment',
+      section: 'Section 8.3',
+      before: 'Business relationships with third parties must be conducted with transparency.',
+      after: 'Business relationships with third parties must comply with the Foreign Corrupt Practices Act (FCPA). Due diligence screening is required for all new third-party engagements.',
+      source: 'FCPA 15 U.S.C. §78dd-1',
+    },
+    {
+      id: 's5',
+      regTag: 'LRN', regClass: 'badge-gold',
+      sevText: 'MEDIUM', sevClass: 'badge-amber',
+      title: 'LRN Best Practice — Plain Language Rewrite',
+      section: 'All Sections',
+      before: 'Compliance is mandatory and violations may result in disciplinary action up to and including termination.',
+      after: 'We expect everyone to follow this Code. If you\'re ever unsure what the right action is, our Ethics Hotline is available 24/7 and all reports are treated confidentially.',
+      source: 'LRN Benchmark Study 2024',
+    },
+  ];
+
+  suggestions.forEach(function(sg) {
+    var state = window.state.suggestions[sg.id];
+    var dismissed = (state === false);
+    var accepted  = (state === true);
+
+    content += '<div class="suggestion-card' + (dismissed ? ' dismissed' : '') + '">';
+    content += '<div class="suggestion-card-header">' +
+      '<span class="badge ' + sg.regClass + '">' + sg.regTag + '</span>' +
+      '<span class="badge ' + sg.sevClass + '">' + sg.sevText + '</span>' +
+    '</div>';
+    content += '<div class="suggestion-title">' + sg.title + '</div>';
+    content += '<div class="suggestion-section">' + sg.section + '</div>';
+
+    content += '<div class="diff-label" style="color:#7f1d1d">Before</div>';
+    content += '<div class="diff-before">' + esc(sg.before) + '</div>';
+    content += '<div class="diff-label" style="color:#14532d">After</div>';
+    content += '<div class="diff-after">' + esc(sg.after) + '</div>';
+    content += '<div class="source-cite">📎 Source: ' + sg.source + '</div>';
+
+    if (accepted) {
+      content += '<div class="accepted-banner">✓ Accepted</div>';
+    } else if (!dismissed) {
+      content += '<div style="display:flex;gap:8px">' +
+        '<button class="btn-green btn-sm" onclick="acceptSuggestion(\'' + sg.id + '\')">Accept</button>' +
+        '<button class="btn-red btn-sm" onclick="dismissSuggestion(\'' + sg.id + '\')">Dismiss</button>' +
+      '</div>';
+    } else {
+      content += '<div style="font-size:12px;color:#9ca3af;font-weight:600">✕ Dismissed</div>';
+    }
+
+    content += '</div>';
+  });
+
+  content += '<div style="margin-top:8px;padding-bottom:20px">' +
+    '<button class="btn-primary" onclick="navigate(\'track-changes\')" style="width:100%;justify-content:center;font-size:15px;padding:13px">Apply Changes &amp; Track →</button>' +
+  '</div>';
+  content += '</div>'; // two-col-right
+
+  content += '</div>'; // two-col
+  return shell(content);
+}
+
+window.acceptSuggestion = function(id) {
+  window.state.suggestions[id] = true;
+  render();
+};
+window.dismissSuggestion = function(id) {
+  window.state.suggestions[id] = false;
+  render();
+};
+
+// ── Track Changes ─────────────────────────────────────────────
+function trackChangesPage() {
+  var content = '';
+  content += '<div class="page-heading-row">' +
+    '<div>' +
+      '<div class="page-heading">Track Changes</div>' +
+      '<div class="page-subheading">Review the differences between document versions.</div>' +
+    '</div>' +
+  '</div>';
+  content += stepperHTML(3);
+
+  content += '<div class="track-layout">';
+
+  // Before panel
+  content += '<div class="diff-panel diff-panel-before">' +
+    '<div class="diff-panel-header">' +
+      '<span class="dot dot-red"></span> Before (v2.0)' +
+    '</div>';
+  var beforeLines = [
+    '4.2 Employee Data Collection',
+    '',
+    'The Company collects and processes employee personal',
+    'data for operational purposes. This may include contact',
+    'information, employment history, performance records,',
+    'and payroll data.',
+    '',
+    'Employees should be aware that this data is used for',
+    'legitimate business purposes and is handled with',
+    'appropriate confidentiality measures.',
+  ];
+  beforeLines.forEach(function(line) {
+    content += '<span class="diff-line">' + (line ? esc(line) : '&nbsp;') + '</span>';
+  });
+  content += '</div>';
+
+  // After panel
+  content += '<div class="diff-panel diff-panel-after">' +
+    '<div class="diff-panel-header">' +
+      '<span class="dot dot-green"></span> After (v2.1)' +
+    '</div>';
+  var afterLines = [
+    { text: '4.2 Employee Data Collection', added: false },
+    { text: '', added: false },
+    { text: 'The Company collects and processes employee personal', added: false },
+    { text: 'data for operational purposes. This may include contact', added: false },
+    { text: 'information, employment history, performance records,', added: false },
+    { text: 'and payroll data.', added: false },
+    { text: '', added: false },
+    { text: '+ In accordance with GDPR Article 13, employees are', added: true },
+    { text: '+ informed at the time of data collection about:', added: true },
+    { text: '+ (a) the identity and contact details of the controller;', added: true },
+    { text: '+ (b) the purposes and legal basis for processing;', added: true },
+    { text: '+ (c) the recipients or categories of recipients;', added: true },
+    { text: '+ (d) rights under GDPR Articles 15–22.', added: true },
+    { text: '', added: false },
+    { text: '+ Any retention beyond the minimum necessary period requires', added: true },
+    { text: '+ written approval from the Data Protection Officer.', added: true },
+  ];
+  afterLines.forEach(function(l) {
+    if (l.added) {
+      content += '<span class="diff-line diff-line-added">' + esc(l.text) + '</span>';
+    } else {
+      content += '<span class="diff-line">' + (l.text ? esc(l.text) : '&nbsp;') + '</span>';
+    }
+  });
+  content += '</div>';
+
+  // Sidebar
+  content += '<div class="track-sidebar">';
+  content += '<div class="section-card" style="padding:16px">' +
+    '<div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:10px">Version History</div>' +
+    '<div class="version-item current">' +
+      '<div class="version-tag">v2.1</div>' +
+      '<div style="display:flex;align-items:center;gap:6px;margin-top:4px">' +
+        '<span class="badge badge-gold" style="font-size:10px">Current</span>' +
+      '</div>' +
+      '<div class="version-date">Mar 15, 2024</div>' +
+    '</div>' +
+    '<div class="version-item" style="margin-top:8px">' +
+      '<div class="version-tag">v2.0</div>' +
+      '<div class="version-date">Jan 10, 2024</div>' +
+    '</div>' +
+    '<div class="version-item" style="margin-top:8px">' +
+      '<div class="version-tag">v1.5</div>' +
+      '<div class="version-date">Aug 22, 2023</div>' +
+    '</div>' +
+  '</div>';
+
+  content += '<div class="change-summary-box">' +
+    '<div class="change-summary-title">Change Summary</div>' +
+    '<div class="change-summary-row"><span>Lines Added</span><span class="change-summary-val" style="color:#4ade80">+8</span></div>' +
+    '<div class="change-summary-row"><span>Lines Removed</span><span class="change-summary-val" style="color:#f87171">-0</span></div>' +
+    '<div class="change-summary-row"><span>Sections Modified</span><span class="change-summary-val">1</span></div>' +
+    '<div class="change-summary-row"><span>AI Suggestions Applied</span><span class="change-summary-val">3/5</span></div>' +
+  '</div>';
+
+  content += '<button class="btn-primary" onclick="navigate(\'stakeholders\')" style="width:100%;justify-content:center">Send for Stakeholder Review →</button>';
+  content += '</div>'; // sidebar
+
+  content += '</div>'; // track-layout
+  return shell(content);
+}
+
+// ── Stakeholders ──────────────────────────────────────────────
+function stakeholdersPage() {
+  var content = '';
+  content += '<div class="page-heading-row">' +
+    '<div>' +
+      '<div class="page-heading">Stakeholder Review</div>' +
+      '<div class="page-subheading">Collect approvals from key stakeholders before publishing.</div>' +
+    '</div>' +
+  '</div>';
+  content += stepperHTML(4);
+
+  // Progress bar
+  var lisaStatus = window.state.reviewers.lisa;
+  var approvedCount = 2 + (lisaStatus === 'approved' ? 1 : 0);
+  var total = 4;
+  var pct = Math.round((approvedCount / total) * 100);
+
+  content += '<div class="section-card" style="margin-bottom:16px">';
+  content += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
+    '<span style="font-size:13px;font-weight:600;color:#1e293b">Approval Progress</span>' +
+    '<span style="font-size:13px;color:#64748b">' + approvedCount + ' of ' + total + ' approved</span>' +
+  '</div>';
+  content += '<div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:' + pct + '%"></div></div>';
+  if (approvedCount === total) {
+    content += '<div class="all-approved-banner" style="margin-top:12px;margin-bottom:0">✅ All stakeholders approved — ready to publish!</div>';
+  }
+  content += '</div>';
+
+  content += '<div class="stakeholder-layout">';
+
+  // Main reviewer cards
+  content += '<div class="stakeholder-main">';
+
+  // Amanda — approved
+  content += reviewerCard('AT', 'Amanda Torres', 'Chief Compliance Officer', 'approved',
+    'The GDPR additions look comprehensive and align well with our data governance framework. Approved.',
+    'Mar 13', null, null);
+
+  // James — approved
+  content += reviewerCard('JW', 'James Wright', 'General Counsel', 'approved',
+    'Legally sound. SOX 302 language matches our certification template. Approved.',
+    'Mar 14', null, null);
+
+  // Lisa — dynamic
+  content += reviewerCard('LP', 'Lisa Park', 'VP Human Resources', lisaStatus,
+    lisaStatus === 'approved'
+      ? 'LGTM — policy reads clearly and covers all HR requirements.'
+      : lisaStatus === 'changes'
+        ? 'Please clarify the grievance escalation process in Section 6.'
+        : null,
+    lisaStatus !== 'pending' ? 'Mar 15' : null,
+    lisaStatus === 'pending',
+    true);
+
+  // Thomas — changes-requested
+  content += reviewerCard('TB', 'Thomas Berg', 'Head of Internal Audit', 'changes',
+    'Section 7.1 needs clearer escalation paths for financial irregularities before I can sign off.',
+    'Mar 14', null, null);
+
+  // Add Reviewer
+  content += '<div class="section-card">' +
+    '<div style="font-size:13px;font-weight:600;color:#1e293b;margin-bottom:4px">Add Reviewer</div>' +
+    '<div style="font-size:12px;color:#94a3b8;margin-bottom:10px">Invite additional stakeholders to review this policy</div>' +
+    '<div class="invite-row">' +
+      '<input class="invite-input" type="email" placeholder="colleague@company.com" />' +
+      '<button class="btn-secondary btn-sm">Invite</button>' +
+    '</div>' +
+  '</div>';
+
+  content += '</div>'; // stakeholder-main
+
+  // Discussion panel
+  content += '<div class="stakeholder-panel">';
+  content += '<div class="chat-container">';
+  content += '<div class="chat-header">💬 Discussion (' + window.state.chatMessages.length + ' messages)</div>';
+  content += '<div class="chat-messages" id="chat-messages-area">';
+
+  window.state.chatMessages.forEach(function(msg) {
+    var isRight = msg.side === 'right';
+    content += '<div class="chat-bubble-wrap' + (isRight ? ' right' : '') + '">' +
+      '<div class="chat-author">' + esc(msg.author) + '</div>' +
+      '<div class="chat-bubble ' + msg.side + '">' + esc(msg.text) + '</div>' +
+      '<div class="chat-date">' + esc(msg.date) + '</div>' +
+    '</div>';
+  });
+
+  content += '</div>'; // chat-messages
+  content += '<div class="chat-input-row">' +
+    '<input class="chat-input" type="text" id="chat-input" placeholder="Type a message..." />' +
+    '<button class="btn-primary btn-sm" id="chat-send">Send</button>' +
+  '</div>';
+  content += '</div>'; // chat-container
+  content += '</div>'; // stakeholder-panel
+
+  content += '</div>'; // stakeholder-layout
+
+  content += '<div style="margin-top:16px">' +
+    '<button class="btn-primary" onclick="navigate(\'publish\')" style="font-size:15px;padding:13px 28px">Proceed to Publish →</button>' +
+  '</div>';
+
+  return shell(content);
+}
+
+function statusBadge(status) {
+  if (status === 'approved')          return '<span class="badge badge-green">✅ Approved</span>';
+  if (status === 'pending')           return '<span class="badge badge-gray">⏳ Pending</span>';
+  if (status === 'changes' || status === 'changes-requested')
+                                      return '<span class="badge badge-amber">💬 Changes Requested</span>';
+  return '<span class="badge badge-gray">' + esc(status) + '</span>';
+}
+
+function reviewerCard(initials, name, role, status, comment, date, showActions, isLisa) {
+  var html = '<div class="reviewer-card">';
+  html += '<div class="reviewer-header">' +
+    '<div class="reviewer-info">' +
+      '<div class="reviewer-avatar">' + initials + '</div>' +
+      '<div>' +
+        '<div class="reviewer-name">' + name + '</div>' +
+        '<div class="reviewer-role">' + role + '</div>' +
+      '</div>' +
+    '</div>' +
+    statusBadge(status) +
+  '</div>';
+
+  if (comment) {
+    html += '<div class="reviewer-comment">"' + esc(comment) + '"</div>';
+    if (date) html += '<div class="reviewer-date">' + date + '</div>';
+  }
+
+  if (showActions) {
+    html += '<div style="display:flex;gap:8px;margin-top:12px">' +
+      '<button class="btn-green btn-sm" onclick="approveReviewer(\'lisa\')">Approve ✓</button>' +
+      '<button class="btn-amber btn-sm" onclick="requestChanges(\'lisa\')">Request Changes</button>' +
+    '</div>';
+  }
+
+  html += '</div>';
+  return html;
+}
+
+window.approveReviewer = function(id) {
+  window.state.reviewers[id] = 'approved';
+  render();
+};
+window.requestChanges = function(id) {
+  window.state.reviewers[id] = 'changes';
+  render();
+};
+
+// ── Publish ───────────────────────────────────────────────────
+function publishPage() {
+  var content = '';
+  content += '<div class="page-heading-row">' +
+    '<div>' +
+      '<div class="page-heading">Publish Policy</div>' +
+      '<div class="page-subheading">Finalize and distribute the policy to all employees.</div>' +
+    '</div>' +
+  '</div>';
+  content += stepperHTML(5);
+
+  var ps = window.state.publishStep;
+
+  if (ps === 1) {
+    content += '<div class="centered-loading">' +
+      '<div class="spinner spinner-lg"></div>' +
+      '<p>Publishing policy to all employees...</p>' +
+      '<p style="font-size:12px;color:#94a3b8">Sending email notifications and updating policy library</p>' +
+    '</div>';
+    return shell(content);
+  }
+
+  if (ps === 2) {
+    content += '<div class="centered-loading">' +
+      '<div style="font-size:80px;margin-bottom:8px">🎉</div>' +
+      '<div style="font-size:26px;font-weight:700;color:#1e293b">Policy Published!</div>' +
+      '<p style="color:#64748b;font-size:15px;max-width:480px;text-align:center">Code of Conduct v2.1 is now live and accessible to all employees.</p>' +
+    '</div>';
+
+    content += '<div class="publish-success-stats">' +
+      '<div class="success-stat-card green-bg">' +
+        '<div class="success-stat-value">847</div>' +
+        '<div class="success-stat-label">Employees Notified</div>' +
+        '<div class="success-stat-sub">Email notifications sent</div>' +
+      '</div>' +
+      '<div class="success-stat-card blue-bg">' +
+        '<div class="success-stat-value">v2.1</div>' +
+        '<div class="success-stat-label">Version Published</div>' +
+        '<div class="success-stat-sub">Now live in policy library</div>' +
+      '</div>' +
+      '<div class="success-stat-card purple-bg">' +
+        '<div class="success-stat-value">100%</div>' +
+        '<div class="success-stat-label">Compliance Score</div>' +
+        '<div class="success-stat-sub">Regulatory alignment verified</div>' +
+      '</div>' +
+    '</div>';
+
+    content += '<div style="text-align:center;margin-top:28px">' +
+      '<button class="btn-secondary" onclick="navigate(\'dashboard\')" style="font-size:15px;padding:13px 32px">Return to Dashboard</button>' +
+    '</div>';
+
+    return shell(content);
+  }
+
+  // publishStep === 0
+  content += '<div class="publish-layout">';
+
+  // Left column
+  content += '<div class="publish-left">';
+
+  content += '<div class="section-card">' +
+    '<div class="section-heading">Publication Summary</div>' +
+    '<table class="summary-table">' +
+      '<tr><td>Policy</td><td>Code of Conduct</td></tr>' +
+      '<tr><td>Version</td><td>2.1</td></tr>' +
+      '<tr><td>Department</td><td>HR</td></tr>' +
+      '<tr><td>Owner</td><td>Sarah Johnson</td></tr>' +
+      '<tr><td>Effective Date</td><td>April 1, 2024</td></tr>' +
+      '<tr><td>AI Suggestions Applied</td><td>3 of 5</td></tr>' +
+      '<tr><td>Stakeholder Approvals</td><td>2 of 4</td></tr>' +
+    '</table>' +
+  '</div>';
+
+  content += '<div class="section-card">' +
+    '<div class="section-heading">Pre-Publication Checklist</div>' +
+    '<div class="checklist-item"><span class="checklist-icon">✅</span> Document uploaded and verified</div>' +
+    '<div class="checklist-item"><span class="checklist-icon">✅</span> AI review completed (3 suggestions applied)</div>' +
+    '<div class="checklist-item"><span class="checklist-icon">✅</span> Changes tracked and documented</div>' +
+    '<div class="checklist-item"><span class="checklist-icon">✅</span> CCO compliance approval received</div>' +
+    '<div class="checklist-item"><span class="checklist-icon">✅</span> Legal sign-off received</div>' +
+    '<div class="checklist-item"><span class="checklist-icon">⬜</span> <span style="color:#94a3b8">All stakeholders approved (pending)</span></div>' +
+  '</div>';
+
+  content += '<div class="section-card">' +
+    '<div class="section-heading">Distribution Options</div>' +
+    '<label class="checkbox-item">' +
+      '<input type="checkbox" checked /> Notify all employees via email (847 recipients)' +
+    '</label>' +
+    '<label class="checkbox-item">' +
+      '<input type="checkbox" checked /> Require employee acknowledgment within 14 days' +
+    '</label>' +
+    '<label class="checkbox-item">' +
+      '<input type="checkbox" /> Auto-assign related compliance training' +
+    '</label>' +
+  '</div>';
+
+  content += '</div>'; // publish-left
+
+  // Right column — email preview
+  content += '<div class="publish-right">';
+  content += '<div class="section-heading">Email Preview</div>';
+  content += '<div class="email-preview">' +
+    '<div class="email-header-bar">📋 Updated Policy: Code of Conduct — Action Required</div>' +
+    '<div class="email-subheader">From: LRN Policy Team &lt;noreply@lrn.com&gt; &nbsp;|&nbsp; To: All Employees (847)</div>' +
+    '<div class="email-body">' +
+      '<p>Dear [Employee Name],</p>' +
+      '<p>Your company\'s <strong>Code of Conduct</strong> has been updated to version 2.1, effective <strong>April 1, 2024</strong>.</p>' +
+      '<p><strong>Key changes include:</strong></p>' +
+      '<div class="email-key-change"><span>•</span><span>GDPR Article 13 data collection transparency requirements</span></div>' +
+      '<div class="email-key-change"><span>•</span><span>SOX Section 302 financial certification accountability</span></div>' +
+      '<div class="email-key-change"><span>•</span><span>FCPA third-party due diligence requirements</span></div>' +
+      '<p style="margin-top:12px">Please read and acknowledge this policy by <strong>April 14, 2024</strong>.</p>' +
+      '<p style="font-size:12px;color:#94a3b8">This is an automated notification from the LRN Policy Management System.</p>' +
+    '</div>' +
+    '<div class="email-actions">' +
+      '<button class="btn-primary btn-sm">Read &amp; Acknowledge</button>' +
+      '<button class="btn-outline btn-sm">View Full Policy</button>' +
+    '</div>' +
+  '</div>';
+  content += '</div>'; // publish-right
+
+  content += '</div>'; // publish-layout
+
+  content += '<div style="margin-top:20px">' +
+    '<button class="btn-primary" id="publish-btn" onclick="doPublish()" style="width:100%;justify-content:center;font-size:16px;padding:15px">Publish to All Employees 🌐</button>' +
+  '</div>';
+
+  return shell(content);
+}
+
+window.doPublish = function() {
+  window.state.publishStep = 1;
+  render();
+  setTimeout(function() {
+    window.state.publishStep = 2;
+    render();
+  }, 2400);
+};
+
+// ── My Policies (simple placeholder) ──────────────────────────
+function myPoliciesPage() {
+  var content = '<div class="page-heading-row">' +
+    '<div><div class="page-heading">My Policies</div>' +
+    '<div class="page-subheading">All policies you own or are involved with.</div></div>' +
+    '<button class="btn-primary" onclick="navigate(\'upload\')">+ Upload New Policy</button>' +
+  '</div>';
+  content += '<div class="section-card" style="text-align:center;padding:60px">' +
+    '<div style="font-size:48px;margin-bottom:12px">📋</div>' +
+    '<div style="font-size:16px;font-weight:600;color:#1e293b;margin-bottom:6px">No additional policies</div>' +
+    '<div style="font-size:13px;color:#64748b">Policies you upload or are assigned to will appear here.</div>' +
+    '<div style="margin-top:20px"><button class="btn-primary" onclick="navigate(\'upload\')">Upload Your First Policy</button></div>' +
+  '</div>';
+  return shell(content);
+}
+
+// ── Render ─────────────────────────────────────────────────────
+function render() {
+  var page = window.state.page;
+  var html = '';
+  if      (page === 'dashboard')     html = dashboardPage();
+  else if (page === 'upload')        html = uploadPage();
+  else if (page === 'ai-review')     html = aiReviewPage();
+  else if (page === 'track-changes') html = trackChangesPage();
+  else if (page === 'stakeholders')  html = stakeholdersPage();
+  else if (page === 'publish')       html = publishPage();
+  else if (page === 'my-policies')   html = myPoliciesPage();
+  else html = dashboardPage();
+
+  document.getElementById('app').innerHTML = html;
+  attachEventListeners();
+
+  // Scroll chat to bottom
+  var chatArea = document.getElementById('chat-messages-area');
+  if (chatArea) chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+// ── Event Listeners ────────────────────────────────────────────
+function attachEventListeners() {
+  // Browse files
+  var browseBtn = document.getElementById('browse-files-btn');
+  if (browseBtn) {
+    browseBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      window.state.fileSelected = true;
+      render();
+    });
+  }
+
+  // Upload drop zone click (only if file not selected)
+  var dropZone = document.getElementById('upload-drop-zone');
+  if (dropZone && !window.state.fileSelected) {
+    dropZone.addEventListener('click', function() {
+      window.state.fileSelected = true;
+      render();
+    });
+  }
+
+  // Upload button
+  var uploadBtn = document.getElementById('upload-btn');
+  if (uploadBtn) {
+    uploadBtn.addEventListener('click', function() {
+      window.state.uploadStep = 1;
+      render();
+      setTimeout(function() {
+        window.state.uploadStep = 2;
+        render();
+      }, 2200);
+    });
+  }
+
+  // Chat input — Enter key
+  var chatInput = document.getElementById('chat-input');
+  if (chatInput) {
+    chatInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') sendChat();
+    });
+  }
+
+  // Chat send button
+  var chatSend = document.getElementById('chat-send');
+  if (chatSend) {
+    chatSend.addEventListener('click', sendChat);
+  }
+}
+
+function sendChat() {
+  var input = document.getElementById('chat-input');
+  if (!input) return;
+  var text = input.value.trim();
+  if (!text) return;
+  window.state.chatMessages.push({
+    author: 'Sarah Johnson',
+    side: 'right',
+    text: text,
+    date: 'Mar 15',
+  });
+  render();
+}
+
+// ── Boot ───────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
